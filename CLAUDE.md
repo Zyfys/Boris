@@ -43,13 +43,8 @@ audio/
 episodes/           # Output folder (gitignored)
 ```
 
-**Flow:** topic → intro lines → N alternating turns (Claude/GPT reply to each other) → outro → merge all MP3s into one file.
+**Flow:** topic → scripted intro lines → N alternating turns (Claude/GPT reply to each other using full conversation history) → scripted outro → all MP3 clips merged into one file.
 
 Each host receives the full conversation history as context. Claude uses `claude-opus-4-6`, GPT uses `gpt-4o`. TTS uses `eleven_turbo_v2_5` model.
 
-## Adding a new host
-
-1. Create `hosts/yourhost.py` extending `BaseHost`
-2. Implement `reply(conversation, topic) -> str`
-3. Set `self.voice_id` from env
-4. Add to the `hosts` list in `podcast.py`
+`save_transcript()` in `podcast.py` exists but is not called by default — wire it up manually if you want a text log alongside the MP3.
