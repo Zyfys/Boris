@@ -14,6 +14,7 @@ import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Callable
 
 from dotenv import load_dotenv
 
@@ -21,7 +22,6 @@ from audio.mixer import merge_audio_files
 from hosts.base import Message
 from hosts.claude_host import ClaudeHost
 from hosts.gpt_host import GPTHost
-from tts.elevenlabs import text_to_speech
 
 load_dotenv()
 
@@ -42,9 +42,26 @@ OUTRO_CLAUDE = (
 OUTRO_GPT = "Until next time. Stay curious."
 
 
-def generate_episode(topic: str, turns: int, output_path: Path) -> Path:
+def _make_tts(provider: str) -> Callable[[str, str, Path], Path]:
+    if provider == "edge":
+        from tts.edge_tts_provider import text_to_speech as edge_tts
+        # edge-tts uses voice keys ("claude"/"gpt"), not IDs
+        def tts(text: str, voice_id: str, path: Path) -> Path:
+            return edge_tts(text, voice_id, path)
+        return tts
+    else:
+        from tts.elevenlabs import text_to_speech as el_tts
+        return el_tts
+
+
+def generate_episode(topic: str, turns: int, output_path: Path, tts_provider: str = "elevenlabs") -> Path:
     claude = ClaudeHost()
     gpt = GPTHost()
+    text_to_speech = _make_tts(tts_provider)
+
+    # edge-tts uses symbolic keys; elevenlabs uses voice IDs from .env
+    def voice(host) -> str:
+        return host.name.lower() if tts_provider == "edge" else host.voice_id
 
     conversation: list[Message] = []
     audio_files: list[Path] = []
@@ -55,12 +72,12 @@ def generate_episode(topic: str, turns: int, output_path: Path) -> Path:
         # --- Intro ---
         print("[Intro] Generating intro...")
         intro_claude_audio = tmp / "00_intro_claude.mp3"
-        text_to_speech(INTRO_TEMPLATE, claude.voice_id, intro_claude_audio)
+        text_to_speech(INTRO_TEMPLATE, voice(claude), intro_claude_audio)
         audio_files.append(intro_claude_audio)
 
         intro_gpt_text = INTRO_GPT.format(topic=topic)
         intro_gpt_audio = tmp / "01_intro_gpt.mp3"
-        text_to_speech(intro_gpt_text, gpt.voice_id, intro_gpt_audio)
+        text_to_speech(intro_gpt_text, voice(gpt), intro_gpt_audio)
         audio_files.append(intro_gpt_audio)
 
         # Seed the conversation so the first real turn has context
@@ -80,17 +97,17 @@ def generate_episode(topic: str, turns: int, output_path: Path) -> Path:
             conversation.append(Message(speaker=host.name, text=text))
 
             audio_path = tmp / f"{turn + 2:02d}_{host.name.lower()}.mp3"
-            text_to_speech(text, host.voice_id, audio_path)
+            text_to_speech(text, voice(host), audio_path)
             audio_files.append(audio_path)
 
         # --- Outro ---
         print("[Outro] Generating outro...")
         outro_claude_audio = tmp / f"{turns + 2:02d}_outro_claude.mp3"
-        text_to_speech(OUTRO_CLAUDE, claude.voice_id, outro_claude_audio)
+        text_to_speech(OUTRO_CLAUDE, voice(claude), outro_claude_audio)
         audio_files.append(outro_claude_audio)
 
         outro_gpt_audio = tmp / f"{turns + 3:02d}_outro_gpt.mp3"
-        text_to_speech(OUTRO_GPT, gpt.voice_id, outro_gpt_audio)
+        text_to_speech(OUTRO_GPT, voice(gpt), outro_gpt_audio)
         audio_files.append(outro_gpt_audio)
 
         # --- Merge ---
@@ -122,6 +139,12 @@ def main():
         default=None,
         help="Output MP3 path (default: episodes/YYYY-MM-DD_<slug>.mp3)",
     )
+    parser.add_argument(
+        "--tts",
+        choices=["elevenlabs", "edge"],
+        default="elevenlabs",
+        help="TTS provider: 'elevenlabs' (default, needs API key) or 'edge' (free, no key needed)",
+    )
     args = parser.parse_args()
 
     if args.out:
@@ -132,7 +155,7 @@ def main():
         date = datetime.now().strftime("%Y-%m-%d")
         output_path = Path("episodes") / f"{date}_{slug}.mp3"
 
-    generate_episode(topic=args.topic, turns=args.turns, output_path=output_path)
+    generate_episode(topic=args.topic, turns=args.turns, output_path=output_path, tts_provider=args.tts)
 
 
 if __name__ == "__main__":
