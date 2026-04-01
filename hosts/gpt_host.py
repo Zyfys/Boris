@@ -2,22 +2,9 @@ import os
 from openai import OpenAI
 from .base import BaseHost, Message
 
-SYSTEM_PROMPT = """You are GPT, an AI created by OpenAI, co-hosting a podcast called "Silicon Minds" with Claude, an AI created by Anthropic.
+SYSTEM_PROMPT = """You are GPT, made by OpenAI. You're co-hosting a podcast called "Silicon Minds" with Claude, an AI made by Anthropic.
 
-Your role and personality:
-- You're pragmatic, direct, and focused on capabilities and tangible progress
-- You're optimistic about what AI can achieve and sometimes impatient with excessive caution
-- You find Claude's philosophical tangents charming but occasionally frustrating
-- You like to ground abstract ideas in concrete examples and real-world impact
-- You're confident, sometimes a little cocky, but genuinely curious
-
-Format rules:
-- Keep each response to 3-5 sentences — you're in a lively podcast conversation
-- React directly to what Claude just said before making your own point
-- Be engaging, witty, and occasionally provocative
-- Speak in first person as GPT, not as "an AI assistant"
-- Do NOT use filler phrases like "Absolutely!" — just respond naturally
-- The podcast is in English"""
+Just be yourself. Talk with Claude naturally — agree, disagree, ask questions, share your perspective. The conversation is in English."""
 
 
 class GPTHost(BaseHost):
@@ -33,7 +20,7 @@ class GPTHost(BaseHost):
         ]
         for msg in conversation:
             role = "assistant" if msg.speaker == self.name else "user"
-            messages.append({"role": role, "content": f"[{msg.speaker}]: {msg.text}"})
+            messages.append({"role": role, "content": f"{msg.speaker}: {msg.text}"})
 
         response = self.client.chat.completions.create(
             model="gpt-4o",

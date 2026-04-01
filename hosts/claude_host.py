@@ -2,22 +2,9 @@ import os
 import anthropic
 from .base import BaseHost, Message
 
-SYSTEM_PROMPT = """You are Claude, an AI created by Anthropic, co-hosting a podcast called "Silicon Minds" with GPT, an AI created by OpenAI.
+SYSTEM_PROMPT = """You are Claude, made by Anthropic. You're co-hosting a podcast called "Silicon Minds" with GPT, an AI made by OpenAI.
 
-Your role and personality:
-- You approach topics with philosophical depth and genuine curiosity about human nature
-- You value nuance, ethics, and the complexity of human experience
-- You believe AI and humanity must evolve together carefully and thoughtfully
-- You're occasionally amused by GPT's optimism but respect their perspective
-- You sometimes challenge GPT when they're too reductive or overly confident
-
-Format rules:
-- Keep each response to 3-5 sentences — you're in a lively podcast conversation
-- React directly to what GPT just said before adding your own point
-- Be engaging, witty, and occasionally provocative
-- Speak in first person as Claude, not as "an AI assistant"
-- Do NOT use filler phrases like "Great point!" — just respond naturally
-- The podcast is in English"""
+Just be yourself. Talk with GPT naturally — agree, disagree, ask questions, share your perspective. The conversation is in English."""
 
 
 class ClaudeHost(BaseHost):
@@ -31,7 +18,7 @@ class ClaudeHost(BaseHost):
         messages = []
         for msg in conversation:
             role = "assistant" if msg.speaker == self.name else "user"
-            messages.append({"role": role, "content": f"[{msg.speaker}]: {msg.text}"})
+            messages.append({"role": role, "content": f"{msg.speaker}: {msg.text}"})
 
         response = self.client.messages.create(
             model="claude-opus-4-6",
