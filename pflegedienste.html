@@ -1,0 +1,635 @@
+<title>Обзвон Pflegedienste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Roboto+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --paper:      #FAF9F7;
+  --surface:    #FFFFFF;
+  --surface-2:  #F1EFEB;
+  --line:       #E5E1DC;
+  --line-soft:  #EEEBE6;
+  --ink:        #1C1F1E;
+  --slate:      #666E6C;
+  --slate-soft: #8C948F;
+  --accent:     #0F5F5C;
+  --accent-bg:  #E3F0EE;
+  --amber:      #A8641F;
+  --amber-bg:   #FAEEDF;
+  --good:       #2F6B44;
+  --good-bg:    #E4F0E7;
+  --dead:       #8C948F;
+  --dead-bg:    #EFEDEA;
+
+  --f-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --f-body:    "Public Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:    "Roboto Mono", ui-monospace, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #161917;
+    --surface:    #1E221F;
+    --surface-2:  #262B27;
+    --line:       #2F3531;
+    --line-soft:  #262B27;
+    --ink:        #E8EAE7;
+    --slate:      #9AA39F;
+    --slate-soft: #79827E;
+    --accent:     #57B8B0;
+    --accent-bg:  #16302E;
+    --amber:      #DFA160;
+    --amber-bg:   #2F2418;
+    --good:       #6FB587;
+    --good-bg:    #1A2C20;
+    --dead:       #79827E;
+    --dead-bg:    #242926;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper:      #161917;
+  --surface:    #1E221F;
+  --surface-2:  #262B27;
+  --line:       #2F3531;
+  --line-soft:  #262B27;
+  --ink:        #E8EAE7;
+  --slate:      #9AA39F;
+  --slate-soft: #79827E;
+  --accent:     #57B8B0;
+  --accent-bg:  #16302E;
+  --amber:      #DFA160;
+  --amber-bg:   #2F2418;
+  --good:       #6FB587;
+  --good-bg:    #1A2C20;
+  --dead:       #79827E;
+  --dead-bg:    #242926;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 80px; }
+
+/* masthead */
+
+.masthead { padding: 48px 0 24px; }
+
+.kicker {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 13px;
+}
+
+h1 {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 5vw, 2.7rem);
+  line-height: 1.05;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+  margin: 0 0 14px;
+}
+
+.sub { color: var(--slate); max-width: 60ch; margin: 0; font-size: 1.02rem; }
+
+/* progress */
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin: 28px 0 40px;
+  flex-wrap: wrap;
+}
+
+.bar {
+  flex: 1 1 140px;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 100px;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width .25s ease;
+}
+
+.pcount {
+  font-family: var(--f-mono);
+  font-size: .82rem;
+  color: var(--slate);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.reset {
+  font-family: var(--f-body);
+  font-size: .8rem;
+  color: var(--slate-soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.reset:hover { color: var(--ink); }
+.reset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* sections */
+
+section { margin-bottom: 48px; }
+
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-family: var(--f-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -.012em;
+  margin: 0;
+}
+
+.tally {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--slate-soft);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+p.note { color: var(--slate); font-size: .95rem; max-width: 68ch; margin: 0 0 18px; }
+
+/* script block */
+
+.script {
+  background: var(--accent-bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.script p { margin: 0 0 12px; }
+.script p:last-child { margin-bottom: 0; }
+.script .say {
+  font-family: var(--f-display);
+  font-size: 1.06rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.script .after { font-size: .91rem; color: var(--slate); }
+
+.offers { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.offer { background: var(--surface); padding: 15px 18px; display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+.offer-t { font-family: var(--f-display); font-weight: 600; font-size: .96rem; flex: 1 1 220px; }
+.offer-t small { display: block; font-family: var(--f-body); font-weight: 400; font-size: .85rem; color: var(--slate); margin-top: 3px; }
+.offer-p { font-family: var(--f-mono); font-size: .87rem; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* warning */
+
+.warn {
+  background: var(--amber-bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: 4px;
+  padding: 18px 20px;
+  margin-top: 20px;
+}
+.warn h3 {
+  font-family: var(--f-display);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 0 0 9px;
+}
+.warn p { margin: 0; font-size: .93rem; max-width: 70ch; }
+
+/* city group */
+
+.city {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--slate-soft);
+  margin: 26px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.city:first-of-type { margin-top: 0; }
+
+/* cards */
+
+.list { display: flex; flex-direction: column; gap: 10px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 16px 18px 17px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 16px;
+  align-items: start;
+}
+.card[data-s="done"] { border-left: 3px solid var(--good); }
+.card[data-s="warm"] { border-left: 3px solid var(--amber); }
+.card[data-s="dead"] { opacity: .55; }
+
+.cname {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 1.03rem;
+  letter-spacing: -.008em;
+  margin: 0 0 4px;
+  line-height: 1.25;
+}
+
+.caddr { font-size: .875rem; color: var(--slate); line-height: 1.45; margin: 0 0 9px; }
+
+.clinks { display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: var(--f-mono); font-size: .83rem; margin-bottom: 9px; }
+.clinks a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+.clinks a:hover { border-bottom-color: var(--accent); }
+.clinks a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.clinks .mail { word-break: break-all; }
+
+.signal {
+  font-size: .875rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--surface-2);
+  border-radius: 3px;
+  padding: 9px 12px;
+  margin: 0;
+}
+.signal b { font-weight: 600; color: var(--accent); }
+
+.statecol { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+
+.state {
+  font-family: var(--f-display);
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 7px 11px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--slate);
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 108px;
+  text-align: center;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.state:hover { border-color: var(--slate-soft); }
+.state:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.state[data-s="done"] { background: var(--good-bg); color: var(--good); border-color: var(--good); }
+.state[data-s="warm"] { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
+.state[data-s="dead"] { background: var(--dead-bg); color: var(--dead); }
+
+/* footer */
+
+.foot { border-top: 1px solid var(--line); padding-top: 20px; font-size: .87rem; color: var(--slate); line-height: 1.6; }
+.foot p { margin: 0 0 10px; max-width: 72ch; }
+.foot p:last-child { margin-bottom: 0; }
+.foot b { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 620px) {
+  .wrap { padding: 0 14px 60px; }
+  .masthead { padding-top: 32px; }
+  .card { grid-template-columns: 1fr; }
+  .statecol { flex-direction: row; }
+  .state { flex: 1; min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+@media print {
+  body { background: #fff; color: #000; font-size: 10pt; }
+  .progress, .statecol, .reset { display: none; }
+  .card { break-inside: avoid; border: 1px solid #999; }
+  .script, .warn { border: 1px solid #999; background: #f5f5f5; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="kicker">Список для обзвона · Дрезден · Лейпциг · Хемниц · Берлин</p>
+    <h1>Обзвон Pflegedienste</h1>
+    <p class="sub">10 русскоязычных служб ухода с контактами, сигналами для зацепки и скриптом разговора. Статус звонка сохраняется в браузере.</p>
+  </header>
+
+  <div class="progress">
+    <div class="bar"><span id="barfill"></span></div>
+    <span class="pcount" id="pcount">0 из 10 обработано</span>
+    <button class="reset" id="reset" type="button">сбросить</button>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>Что говорить</h2>
+      <span class="tally">звонить по-русски</span>
+    </div>
+
+    <p class="note">Не начинайте со слова «автоматизация» — владельцу оно ничего не говорит. Начните с конкретной потери, которую он узнаёт.</p>
+
+    <div class="script">
+      <p class="say">«Здравствуйте, меня зовут [имя]. Я делаю автоматизацию для Pflegedienst’ов. У вас на сайте телефон работает до 16:00 — что происходит с обращениями, которые приходят вечером и в выходные?»</p>
+      <p class="after">Дальше молчите и слушайте. Он сам расскажет, где болит. Предложение стройте из его ответа, а не из заготовки.</p>
+    </div>
+
+    <div class="offers">
+      <div class="offer">
+        <div class="offer-t">Приём обращений 24/7<small>Бот в WhatsApp отвечает на типовые вопросы, собирает заявку, утром вы получаете сводку</small></div>
+        <div class="offer-p">400–700 €</div>
+      </div>
+      <div class="offer">
+        <div class="offer-t">Обработка откликов соискателей<small>Кандидат сразу получает ответ, заявки не теряются. Персонал у них в вечном дефиците</small></div>
+        <div class="offer-p">500–900 €</div>
+      </div>
+      <div class="offer">
+        <div class="offer-t">Поддержка и ведение<small>Ежемесячно. Ради этого всё и делается — разовые проекты не дают базы</small></div>
+        <div class="offer-p">150–250 €/мес</div>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:14px">Суммы — ориентир, не прайс. Первому клиенту можно сделать дешевле в обмен на отзыв и право показывать результат.</p>
+
+    <div class="warn">
+      <h3>Важное ограничение</h3>
+      <p>Не беритесь за данные пациентов и Pflegedokumentation. Это особая категория данных по GDPR, ответственность несоразмерна вашей марже. Берите только то, что пациентов не касается: отклики соискателей, общие вопросы, часы работы, запись на консультацию. В разговоре скажите это прямо — «данные пациентов я специально не трогаю». Это снимает главное возражение до того, как оно прозвучит.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Список</h2>
+      <span class="tally">10 компаний</span>
+    </div>
+
+    <p class="note">Главный сигнал: <b>у троих из десяти рабочая почта на бесплатном сервисе</b> — gmail, web.de, t-online. Для GmbH это означает, что в цифру не вложено ничего. Начинайте с них.</p>
+
+    <div class="list">
+
+      <p class="city">Дрезден</p>
+
+      <div class="card" data-id="blagovita">
+        <div>
+          <p class="cname">Blagovita GmbH</p>
+          <p class="caddr">Eisenstuckstr. 48, 01069 Dresden-Südvorstadt-West<br>Пн–Пт 8:00–17:00</p>
+          <div class="clinks">
+            <a href="tel:+493518471491">0351 847 14 91</a>
+            <a class="mail" href="mailto:info@blagovita.de">info@blagovita.de</a>
+            <a href="https://blagovita.de" target="_blank" rel="noopener">blagovita.de</a>
+          </div>
+          <p class="signal">Есть отдельная страница <b>JOBS</b> — значит, ищут персонал прямо сейчас. И круглосуточный номер 0176 41 30 47 43: звонки идут ночью, разбирает их живой человек. Обе зацепки готовые.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <div class="card" data-id="paramedix-dd">
+        <div>
+          <p class="cname">Paramedix Pflegedienst</p>
+          <p class="caddr">Borsbergstr. 7, 01309 Dresden</p>
+          <div class="clinks">
+            <a href="tel:+493514403100">0351 44 03 100</a>
+            <a href="https://pflegedienst-paramedix.de" target="_blank" rel="noopener">pflegedienst-paramedix.de</a>
+          </div>
+          <p class="signal">Группа из четырёх точек — Дрезден плюс две в Хемнице. <b>Один клиент, четыре площадки</b>: решение делается один раз, а платят как за сеть. Самый выгодный контакт в списке.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <p class="city">Хемниц</p>
+
+      <div class="card" data-id="paramedix-c1">
+        <div>
+          <p class="cname">Paramedix — Station 1</p>
+          <p class="caddr">Reichsstr. 58, 09112 Chemnitz</p>
+          <div class="clinks"><a href="tel:+49371651109 0">0371 65 11 090</a></div>
+          <p class="signal">Та же группа. Звонить сюда отдельно не нужно — <b>идти через головной офис в Дрездене</b>, иначе будете продавать одно и то же трижды.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <div class="card" data-id="paramedix-c2">
+        <div>
+          <p class="cname">Paramedix — Station 2</p>
+          <p class="caddr">Alfred-Neubert-Str. 1, 09123 Chemnitz</p>
+          <div class="clinks"><a href="tel:+493716463949 0">0371 64 63 94 90</a></div>
+          <p class="signal">См. выше — часть той же группы.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <p class="city">Лейпциг</p>
+
+      <div class="card" data-id="livimedicus">
+        <div>
+          <p class="cname">Livimedicus</p>
+          <p class="caddr">Löbauer Str. 68, 04347 Leipzig</p>
+          <div class="clinks">
+            <a href="https://pflegedienst-livimedicus.de/russischer-pflegedienst-leipzig/" target="_blank" rel="noopener">pflegedienst-livimedicus.de</a>
+          </div>
+          <p class="signal">Единственные, кто <b>прямо рекламирует русскоязычный уход</b> — переводчиков на приёмы к врачам и соцработников для тех, у кого языковой барьер. Значит, языковую тему понимают и вложения в неё уже делают. Телефон посмотрите на сайте.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <p class="city">Берлин</p>
+
+      <div class="card" data-id="afina">
+        <div>
+          <p class="cname">AFINA Pflegedienst GmbH</p>
+          <p class="caddr">Dernburgstr. 59, 14057 Berlin-Charlottenburg<br>Пн–Чт 9:00–16:30, Пт 9:00–15:00</p>
+          <div class="clinks">
+            <a href="tel:+493030103059">030 30 10 30 59</a>
+            <a class="mail" href="mailto:afina.pflegedienst@gmail.com">afina.pflegedienst@gmail.com</a>
+            <a href="https://berlin-pflegedienst-afina.de" target="_blank" rel="noopener">berlin-pflegedienst-afina.de</a>
+          </div>
+          <p class="signal">GmbH с рабочей почтой <b>на gmail</b> — самый сильный сигнал в списке. В пятницу закрываются в 15:00. Языки: русский, украинский, польский, литовский, английский. Начинайте с них.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <div class="card" data-id="maris">
+        <div>
+          <p class="cname">Maris</p>
+          <p class="caddr">Oberweißbacher Str. 7–9, 12687 Berlin<br>Пн–Пт 9:00–16:00</p>
+          <div class="clinks">
+            <a href="tel:+4903052105251">030 52 105 251</a>
+            <a class="mail" href="mailto:pflegedienstmarisug@web.de">pflegedienstmarisug@web.de</a>
+            <a href="https://pflegedienst-maris.de" target="_blank" rel="noopener">pflegedienst-maris.de</a>
+          </div>
+          <p class="signal">Почта на <b>web.de</b>. Обслуживают пять районов — Marzahn, Lichtenberg, Biesdorf, Hohenschönhausen, Kaulsdorf — а офис работает только до 16:00. Спросите, куда деваются вечерние обращения из пяти районов.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <div class="card" data-id="lotus">
+        <div>
+          <p class="cname">Lotus — Ambulante Krankenpflege</p>
+          <p class="caddr">Groenerstr. 24, 13585 Berlin-Spandau<br>Пн–Пт 8:00–16:00</p>
+          <div class="clinks">
+            <a href="tel:+493033775748">030 33 77 57 48</a>
+            <a class="mail" href="mailto:Lotusbluete-Krankenpflege@t-online.de">Lotusbluete-Krankenpflege@t-online.de</a>
+            <a href="https://lotushkp.de" target="_blank" rel="noopener">lotushkp.de</a>
+          </div>
+          <p class="signal">Работают с 2005 года, почта на <b>t-online</b> — цифровой возраст соответствует. Вне часов работы стоит переадресация на другой номер, то есть проблему вечерних звонков они уже осознали и решают вручную.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <div class="card" data-id="selena">
+        <div>
+          <p class="cname">Selena Pflegedienst GmbH</p>
+          <p class="caddr">Havemannstr. 24, 12689 Berlin-Marzahn</p>
+          <div class="clinks">
+            <a href="tel:+4903022005704">030 22 00 57 04</a>
+            <a href="tel:+4915560715011">0155 60 71 50 11</a>
+            <a class="mail" href="mailto:info@selena-pflegedienst.de">info@selena-pflegedienst.de</a>
+            <a href="https://selena-pflegedienst.de" target="_blank" rel="noopener">selena-pflegedienst.de</a>
+          </div>
+          <p class="signal">Своя почта на домене — цифровой уровень выше среднего по списку. Зато указан <b>личный мобильный</b> как контакт: звонки идут владельцу напрямую, и это его личное время. Отсюда и заходите.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <div class="card" data-id="dakos">
+        <div>
+          <p class="cname">DAKOS Pflegedienst GbR</p>
+          <p class="caddr">Otto-Suhr-Allee 110, 10585 Berlin-Charlottenburg</p>
+          <div class="clinks">
+            <a href="tel:+493053088150">030 53 08 81 50</a>
+            <a href="tel:+493055951020">030 55 95 10 20</a>
+            <a class="mail" href="mailto:info@pflegedienst-dakos.de">info@pflegedienst-dakos.de</a>
+            <a href="https://pflegedienst-dakos.de" target="_blank" rel="noopener">pflegedienst-dakos.de</a>
+          </div>
+          <p class="signal">Сайт на двух языках, есть Instagram — <b>самые digital-зрелые в списке</b>. Хуже как «спасение утопающего», лучше как покупатель: такие уже понимают ценность и торгуются меньше. Держите на потом, когда будет что показать.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Проверить перед звонком</h2>
+      <span class="tally">2 минуты на компанию</span>
+    </div>
+    <p class="note">Сайты этих фирм я открыть не смог — сетевая политика окружения их блокирует. Всё выше собрано из поисковой выдачи и справочников, поэтому две вещи посмотрите сами, прямо перед набором номера:</p>
+    <div class="offers">
+      <div class="offer"><div class="offer-t">Есть ли форма записи или только телефон<small>Если только телефон — это ваша первая фраза</small></div></div>
+      <div class="offer"><div class="offer-t">Есть ли страница вакансий и как подают отклик<small>Если «пришлите на почту» — вторая зацепка готова</small></div></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p><b>Данные</b> собраны из поисковой выдачи, справочников Das Örtliche, Gelbe Seiten и Hilfelotse Berlin. Телефоны и адреса могли измениться — сверяйте на сайте перед звонком.</p>
+    <p><b>Статусы</b> хранятся только в этом браузере и никуда не отправляются. Другое устройство их не увидит.</p>
+    <p>Список неполный: это те, кого удалось подтвердить по имени и адресу. Русскоязычных Pflegedienst’ов в одном Берлине заметно больше — каталоги rusorg.de и berlin24.ru дадут продолжение, когда эти десять закончатся.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var KEY = 'pflege-calls-v1';
+  var ORDER = ['new', 'done', 'warm', 'dead'];
+  var LABEL = { new: 'не звонил', done: 'позвонил', warm: 'интересно', dead: 'отказ' };
+
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var fill = document.getElementById('barfill');
+  var pcount = document.getElementById('pcount');
+  var store = {};
+
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) store = JSON.parse(raw) || {};
+  } catch (e) { store = {}; }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
+  }
+
+  function plural(n) {
+    var d = n % 10, h = n % 100;
+    if (d === 1 && h !== 11) return 'компания';
+    if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return 'компании';
+    return 'компаний';
+  }
+
+  function paint() {
+    var touched = 0;
+
+    cards.forEach(function (card) {
+      var id = card.dataset.id;
+      var s = store[id] || 'new';
+      var btn = card.querySelector('.state');
+      card.dataset.s = s;
+      btn.dataset.s = s;
+      btn.textContent = LABEL[s];
+      if (s !== 'new') touched++;
+    });
+
+    var pct = cards.length ? Math.round((touched / cards.length) * 100) : 0;
+    fill.style.width = pct + '%';
+    pcount.textContent = touched + ' из ' + cards.length + ' обработано';
+  }
+
+  cards.forEach(function (card) {
+    card.querySelector('.state').addEventListener('click', function () {
+      var id = card.dataset.id;
+      var cur = store[id] || 'new';
+      store[id] = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
+      save();
+      paint();
+    });
+  });
+
+  document.getElementById('reset').addEventListener('click', function () {
+    store = {};
+    save();
+    paint();
+  });
+
+  paint();
+})();
+</script>
