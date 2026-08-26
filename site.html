@@ -1,0 +1,469 @@
+<title>Боты для бизнеса в Германии</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --bg:        #0E1013;
+  --bg-2:      #14171B;
+  --card:      #16191E;
+  --card-2:    #1B1F25;
+  --line:      #24282F;
+  --line-2:    #2E333B;
+  --text:      #F2F4F6;
+  --muted:     #939BA6;
+  --dim:       #6B7280;
+  --blue:      #3B82F6;
+  --blue-dim:  #2563EB;
+  --blue-soft: #1D2B45;
+  --green:     #34D399;
+  --amber:     #FBBF24;
+
+  --f: "Manrope", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --m: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--f);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+
+/* ---------- header ---------- */
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(14, 16, 19, .92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.hrow {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: grid;
+  place-items: center;
+  letter-spacing: -.02em;
+  flex-shrink: 0;
+}
+
+.langs {
+  display: flex;
+  background: var(--card-2);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+  margin-left: auto;
+}
+.lang {
+  font-family: var(--f);
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+.lang[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.lang:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.cta-sm {
+  background: var(--blue);
+  color: #fff;
+  font-family: var(--f);
+  font-weight: 700;
+  font-size: .9rem;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 18px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cta-sm:hover { background: var(--blue-dim); }
+.cta-sm:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* ---------- hero ---------- */
+
+.hero { padding: 60px 0 52px; }
+
+.eyebrow {
+  font-family: var(--m);
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin: 0 0 18px;
+}
+
+h1 {
+  font-size: clamp(2.1rem, 7.5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -.03em;
+  margin: 0 0 20px;
+  text-wrap: balance;
+}
+h1 .hl { color: var(--blue); }
+
+.lead {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin: 0 0 32px;
+  max-width: 34ch;
+}
+
+.cta-lg {
+  display: inline-block;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.03rem;
+  border-radius: 12px;
+  padding: 17px 30px;
+  text-decoration: none;
+}
+.cta-lg:hover { background: var(--blue-dim); }
+.cta-lg:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+.under { font-size: .88rem; color: var(--dim); margin: 14px 0 0; }
+
+/* ---------- sections ---------- */
+
+section { padding: 52px 0; border-top: 1px solid var(--line); }
+
+h2 {
+  font-size: clamp(1.6rem, 5.5vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -.025em;
+  margin: 0 0 12px;
+  line-height: 1.15;
+}
+
+.sub { color: var(--muted); margin: 0 0 30px; font-size: 1.02rem; max-width: 44ch; }
+
+/* ---------- cards ---------- */
+
+.cards { display: flex; flex-direction: column; gap: 14px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 26px 24px 28px;
+}
+.card.hi { border-color: var(--blue); background: var(--card-2); }
+
+.num {
+  font-family: var(--f);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--blue);
+  display: block;
+  margin-bottom: 14px;
+  letter-spacing: -.01em;
+}
+
+.card h3 {
+  font-size: 1.22rem;
+  font-weight: 800;
+  letter-spacing: -.018em;
+  line-height: 1.25;
+  margin: 0 0 10px;
+}
+
+.card p { color: var(--muted); margin: 0; font-size: 1rem; }
+.card p + p { margin-top: 10px; }
+
+.badge {
+  display: inline-block;
+  background: var(--blue);
+  color: #fff;
+  font-family: var(--f);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 100px;
+  margin-top: 18px;
+}
+
+/* ---------- demo ---------- */
+
+.demo {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px 20px 24px;
+}
+
+.chat { display: flex; flex-direction: column; gap: 10px; }
+
+.msg {
+  max-width: 82%;
+  padding: 12px 15px;
+  border-radius: 15px;
+  font-size: .97rem;
+  line-height: 1.45;
+}
+.msg.them { background: var(--card-2); border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 5px; }
+.msg.bot  { background: var(--blue-soft); border: 1px solid var(--blue); align-self: flex-end; border-bottom-right-radius: 5px; }
+.msg .t { display: block; font-family: var(--m); font-size: .68rem; color: var(--dim); margin-top: 6px; }
+
+.demo-note {
+  font-family: var(--m);
+  font-size: .74rem;
+  color: var(--dim);
+  text-align: center;
+  margin: 18px 0 0;
+  letter-spacing: .04em;
+}
+
+/* ---------- tags ---------- */
+
+.tags { display: flex; flex-wrap: wrap; gap: 9px; }
+
+.tag {
+  font-family: var(--m);
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--blue);
+  background: var(--blue-soft);
+  border-radius: 100px;
+  padding: 8px 15px;
+}
+
+/* ---------- guarantees ---------- */
+
+.guar { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.g {
+  background: var(--card);
+  padding: 20px 22px;
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.g-t { font-weight: 700; font-size: 1.02rem; flex: 1 1 200px; }
+.g-t small { display: block; font-weight: 400; font-size: .92rem; color: var(--muted); margin-top: 5px; }
+.g-v { font-family: var(--m); font-size: .87rem; color: var(--green); white-space: nowrap; }
+
+/* ---------- final ---------- */
+
+.final { text-align: center; padding: 64px 0 72px; }
+.final h2 { margin-bottom: 14px; }
+.final .sub { margin: 0 auto 30px; }
+
+/* ---------- footer ---------- */
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 28px 0 40px;
+  font-size: .9rem;
+  color: var(--dim);
+}
+.fl { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; }
+.fl a { color: var(--muted); text-decoration: none; }
+.fl a:hover { color: var(--blue); }
+
+/* ---------- todo marker ---------- */
+
+.todo {
+  background: #2A2011;
+  border: 1px dashed var(--amber);
+  border-radius: 10px;
+  padding: 13px 16px;
+  font-family: var(--m);
+  font-size: .8rem;
+  color: var(--amber);
+  line-height: 1.55;
+  margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header>
+  <div class="hrow">
+    <div class="logo">BT</div>
+    <div class="langs">
+      <button class="lang" type="button" aria-pressed="true">RU</button>
+      <button class="lang" type="button" aria-pressed="false">DE</button>
+    </div>
+    <a class="cta-sm" href="#contact">Написать</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <p class="eyebrow">Автоматизация для бизнеса в Германии</p>
+    <h1>Клиенты пишут круглосуточно. Офис работает <span class="hl">до 16:00</span>.</h1>
+    <p class="lead">Делаю ботов в WhatsApp и Telegram, которые отвечают вместо вас вечером и в выходные — и не теряют ни одного обращения.</p>
+    <a class="cta-lg" href="#contact">Написать в WhatsApp</a>
+    <p class="under">Разговор 15 минут, без продажи. Смотрим, что можно автоматизировать.</p>
+  </div>
+
+  <section>
+    <h2>Что решаю</h2>
+    <p class="sub">Если хоть одно знакомо — нам есть о чём поговорить.</p>
+
+    <div class="cards">
+      <div class="card">
+        <span class="num">01</span>
+        <h3>Обращения после закрытия офиса</h3>
+        <p>Человек написал в 19:40, ответ получил утром. К этому времени он уже написал конкурентам. Бот отвечает сразу, собирает заявку и утром отдаёт вам сводку.</p>
+      </div>
+      <div class="card">
+        <span class="num">02</span>
+        <h3>Одни и те же вопросы по двадцать раз</h3>
+        <p>Часы работы, цены, адрес, какие документы принести. Каждый день, вручную. Бот закрывает это сам, а вам остаются только настоящие разговоры.</p>
+      </div>
+      <div class="card">
+        <span class="num">03</span>
+        <h3>Отклики на вакансии теряются в переписке</h3>
+        <p>Персонал ищете месяцами, а кандидат ждёт ответа три дня и уходит. Бот отвечает мгновенно, собирает анкету и складывает всё в одну таблицу.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Как это работает</h2>
+    <p class="sub">Вечер пятницы, офис закрыт.</p>
+
+    <div class="demo">
+      <div class="chat">
+        <div class="msg them">Здравствуйте! Маме нужен уход на дому. Можно узнать про цены?<span class="t">19:42</span></div>
+        <div class="msg bot">Добрый вечер! Стоимость зависит от Pflegegrad и объёма помощи. Подскажите, Pflegegrad уже оформлен?<span class="t">19:42</span></div>
+        <div class="msg them">Да, третий<span class="t">19:44</span></div>
+        <div class="msg bot">Хорошо. При Pflegegrad 3 значительная часть покрывается кассой. Оставьте номер — руководитель перезвонит завтра до обеда и посчитает точно.<span class="t">19:44</span></div>
+        <div class="msg them">+49 152 ...<span class="t">19:45</span></div>
+        <div class="msg bot">Записал. Ждите звонка до 12:00. Хорошего вечера!<span class="t">19:45</span></div>
+      </div>
+      <p class="demo-note">Утром у вас в таблице: имя, телефон, Pflegegrad, время обращения</p>
+    </div>
+
+    <div class="todo">TODO: заменить на видео реального бота — запись экрана 60 секунд. Это сильнее любой вёрстки.</div>
+  </section>
+
+  <section>
+    <h2>Как я работаю</h2>
+
+    <div class="cards">
+      <div class="card">
+        <span class="num">01</span>
+        <h3>Разговор 15 минут</h3>
+        <p>Без презентаций. Разбираемся, где у вас теряется время и деньги.</p>
+      </div>
+      <div class="card">
+        <span class="num">02</span>
+        <h3>Предложение с фиксированной ценой</h3>
+        <p>Что делаю, за какой срок, сколько стоит. Без почасовки — итог известен заранее.</p>
+      </div>
+      <div class="card">
+        <span class="num">03</span>
+        <h3>Сборка и запуск</h3>
+        <p>Показываю, как всё устроено, и передаю доступы. Система остаётся вашей.</p>
+      </div>
+      <div class="card hi">
+        <span class="num">04</span>
+        <h3>Месяц поддержки бесплатно</h3>
+        <p>Правки, вопросы, донастройка после запуска — без доплаты. Автоматизация полезна, только если работает через полгода.</p>
+        <span class="badge">Входит в каждый проект</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Условия</h2>
+    <div class="guar">
+      <div class="g">
+        <div class="g-t">Цена известна до старта<small>Фиксированная сумма в предложении, не почасовая ставка</small></div>
+        <div class="g-v">фикс</div>
+      </div>
+      <div class="g">
+        <div class="g-t">Поддержка после запуска<small>Правки и вопросы без доплаты</small></div>
+        <div class="g-v">1 месяц</div>
+      </div>
+      <div class="g">
+        <div class="g-t">Данные пациентов не трогаю<small>Только заявки, вопросы и отклики — без медицинской информации</small></div>
+        <div class="g-v">GDPR</div>
+      </div>
+      <div class="g">
+        <div class="g-t">Общение на русском<small>Немецкий интерфейс для ваших клиентов — по желанию</small></div>
+        <div class="g-v">RU / DE</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>На чём делаю</h2>
+    <div class="tags">
+      <span class="tag">WhatsApp Business API</span>
+      <span class="tag">Telegram Bot</span>
+      <span class="tag">n8n</span>
+      <span class="tag">Make.com</span>
+      <span class="tag">Python</span>
+      <span class="tag">Google Sheets</span>
+      <span class="tag">Claude API</span>
+      <span class="tag">OpenAI</span>
+    </div>
+    <div class="todo">TODO: оставить только то, с чем реально работали. Лишний тег вскроется на первом же вопросе.</div>
+  </section>
+
+  <div class="final" id="contact">
+    <h2>Есть задача?</h2>
+    <p class="sub">За 15 минут разберёмся, что можно автоматизировать.</p>
+    <a class="cta-lg" href="https://wa.me/49XXXXXXXXXX">Написать в WhatsApp</a>
+    <p class="under">Фиксированная цена до старта · месяц поддержки включён</p>
+    <div class="todo" style="text-align:left">TODO: вставить номер вместо 49XXXXXXXXXX. Формат без плюса и пробелов: wa.me/4915212345678</div>
+  </div>
+
+  <footer>
+    <div>© 2026 Борис Томилин · Дрезден</div>
+    <div class="fl">
+      <a href="https://wa.me/49XXXXXXXXXX">WhatsApp</a>
+      <a href="https://t.me/username">Telegram</a>
+      <a href="mailto:tomilin.boris@gmail.com">Email</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var langs = Array.prototype.slice.call(document.querySelectorAll('.lang'));
+  langs.forEach(function (b) {
+    b.addEventListener('click', function () {
+      langs.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    });
+  });
+})();
+</script>
