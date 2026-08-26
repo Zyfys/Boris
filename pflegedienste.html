@@ -350,14 +350,14 @@ p.note { color: var(--slate); font-size: .95rem; max-width: 68ch; margin: 0 0 18
 <div class="wrap">
 
   <header class="masthead">
-    <p class="kicker">Список для обзвона · Дрезден · Лейпциг · Хемниц · Берлин</p>
+    <p class="kicker">Список для обзвона · Берлин · Лейпциг · Дрезден</p>
     <h1>Обзвон Pflegedienste</h1>
-    <p class="sub">10 русскоязычных служб ухода с контактами, сигналами для зацепки и скриптом разговора. Статус звонка сохраняется в браузере.</p>
+    <p class="sub">Шесть подтверждённых русскоязычных служб ухода плюс одна под вопросом — с контактами, зацепками и скриптом разговора. Статус звонка сохраняется в браузере.</p>
   </header>
 
   <div class="progress">
     <div class="bar"><span id="barfill"></span></div>
-    <span class="pcount" id="pcount">0 из 10 обработано</span>
+    <span class="pcount" id="pcount">0 из 7 обработано</span>
     <button class="reset" id="reset" type="button">сбросить</button>
   </div>
 
@@ -400,79 +400,16 @@ p.note { color: var(--slate); font-size: .95rem; max-width: 68ch; margin: 0 0 18
   <section>
     <div class="sec-head">
       <h2>Список</h2>
-      <span class="tally">10 компаний</span>
+      <span class="tally">6 подтверждённых + 1 под вопросом</span>
     </div>
 
-    <p class="note">Главный сигнал: <b>у троих из десяти рабочая почта на бесплатном сервисе</b> — gmail, web.de, t-online. Для GmbH это означает, что в цифру не вложено ничего. Начинайте с них.</p>
+    <p class="note">Русскоязычные Pflegedienst’ы сосредоточены <b>в Берлине, а не в Саксонии</b> — это совпадает с географией постсоветской общины, Marzahn и Lichtenberg. В Дрездене ни одной подтверждённой службы найти не удалось. Для вас это не проблема: продажа идёт по телефону и в WhatsApp, а до Берлина два часа поездом, если понадобится встреча.</p>
+
+    <p class="note">Главный сигнал: <b>у половины рабочая почта на бесплатном сервисе</b> — gmail, web.de, t-online. Для GmbH это значит, что в цифру не вложено ничего. Начинайте с них.</p>
 
     <div class="list">
 
-      <p class="city">Дрезден</p>
-
-      <div class="card" data-id="blagovita">
-        <div>
-          <p class="cname">Blagovita GmbH</p>
-          <p class="caddr">Eisenstuckstr. 48, 01069 Dresden-Südvorstadt-West<br>Пн–Пт 8:00–17:00</p>
-          <div class="clinks">
-            <a href="tel:+493518471491">0351 847 14 91</a>
-            <a class="mail" href="mailto:info@blagovita.de">info@blagovita.de</a>
-            <a href="https://blagovita.de" target="_blank" rel="noopener">blagovita.de</a>
-          </div>
-          <p class="signal">Есть отдельная страница <b>JOBS</b> — значит, ищут персонал прямо сейчас. И круглосуточный номер 0176 41 30 47 43: звонки идут ночью, разбирает их живой человек. Обе зацепки готовые.</p>
-        </div>
-        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
-      </div>
-
-      <div class="card" data-id="paramedix-dd">
-        <div>
-          <p class="cname">Paramedix Pflegedienst</p>
-          <p class="caddr">Borsbergstr. 7, 01309 Dresden</p>
-          <div class="clinks">
-            <a href="tel:+493514403100">0351 44 03 100</a>
-            <a href="https://pflegedienst-paramedix.de" target="_blank" rel="noopener">pflegedienst-paramedix.de</a>
-          </div>
-          <p class="signal">Группа из четырёх точек — Дрезден плюс две в Хемнице. <b>Один клиент, четыре площадки</b>: решение делается один раз, а платят как за сеть. Самый выгодный контакт в списке.</p>
-        </div>
-        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
-      </div>
-
-      <p class="city">Хемниц</p>
-
-      <div class="card" data-id="paramedix-c1">
-        <div>
-          <p class="cname">Paramedix — Station 1</p>
-          <p class="caddr">Reichsstr. 58, 09112 Chemnitz</p>
-          <div class="clinks"><a href="tel:+49371651109 0">0371 65 11 090</a></div>
-          <p class="signal">Та же группа. Звонить сюда отдельно не нужно — <b>идти через головной офис в Дрездене</b>, иначе будете продавать одно и то же трижды.</p>
-        </div>
-        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
-      </div>
-
-      <div class="card" data-id="paramedix-c2">
-        <div>
-          <p class="cname">Paramedix — Station 2</p>
-          <p class="caddr">Alfred-Neubert-Str. 1, 09123 Chemnitz</p>
-          <div class="clinks"><a href="tel:+493716463949 0">0371 64 63 94 90</a></div>
-          <p class="signal">См. выше — часть той же группы.</p>
-        </div>
-        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
-      </div>
-
-      <p class="city">Лейпциг</p>
-
-      <div class="card" data-id="livimedicus">
-        <div>
-          <p class="cname">Livimedicus</p>
-          <p class="caddr">Löbauer Str. 68, 04347 Leipzig</p>
-          <div class="clinks">
-            <a href="https://pflegedienst-livimedicus.de/russischer-pflegedienst-leipzig/" target="_blank" rel="noopener">pflegedienst-livimedicus.de</a>
-          </div>
-          <p class="signal">Единственные, кто <b>прямо рекламирует русскоязычный уход</b> — переводчиков на приёмы к врачам и соцработников для тех, у кого языковой барьер. Значит, языковую тему понимают и вложения в неё уже делают. Телефон посмотрите на сайте.</p>
-        </div>
-        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
-      </div>
-
-      <p class="city">Берлин</p>
+      <p class="city">Берлин — основной кластер</p>
 
       <div class="card" data-id="afina">
         <div>
@@ -546,6 +483,36 @@ p.note { color: var(--slate); font-size: .95rem; max-width: 68ch; margin: 0 0 18
         <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
       </div>
 
+      <p class="city">Лейпциг</p>
+
+      <div class="card" data-id="livimedicus">
+        <div>
+          <p class="cname">Livimedicus</p>
+          <p class="caddr">Löbauer Str. 68, 04347 Leipzig</p>
+          <div class="clinks">
+            <a href="https://pflegedienst-livimedicus.de/russischer-pflegedienst-leipzig/" target="_blank" rel="noopener">pflegedienst-livimedicus.de</a>
+          </div>
+          <p class="signal">Единственные, кто <b>прямо рекламирует русскоязычный уход</b> — переводчиков на приёмы к врачам и соцработников для тех, у кого языковой барьер. Значит, языковую тему понимают и вложения в неё уже делают. Телефон посмотрите на сайте.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
+      <p class="city">Дрезден — требует проверки</p>
+
+      <div class="card" data-id="blagovita">
+        <div>
+          <p class="cname">Blagovita GmbH</p>
+          <p class="caddr">Eisenstuckstr. 48, 01069 Dresden-Südvorstadt-West<br>Пн–Пт 8:00–17:00</p>
+          <div class="clinks">
+            <a href="tel:+493518471491">0351 847 14 91</a>
+            <a class="mail" href="mailto:info@blagovita.de">info@blagovita.de</a>
+            <a href="https://blagovita.de" target="_blank" rel="noopener">blagovita.de</a>
+          </div>
+          <p class="signal">Русскоязычность <b>не подтверждена</b> — название славянское, но это догадка. Есть страница JOBS и круглосуточный номер 0176 41 30 47 43, так что зацепки настоящие. Один звонок покажет, на каком языке там говорят.</p>
+        </div>
+        <div class="statecol"><button class="state" type="button" data-s="new">не звонил</button></div>
+      </div>
+
     </div>
   </section>
 
@@ -562,9 +529,11 @@ p.note { color: var(--slate); font-size: .95rem; max-width: 68ch; margin: 0 0 18
   </section>
 
   <footer class="foot">
-    <p><b>Данные</b> собраны из поисковой выдачи, справочников Das Örtliche, Gelbe Seiten и Hilfelotse Berlin. Телефоны и адреса могли измениться — сверяйте на сайте перед звонком.</p>
+    <p><b>Как проверялась русскоязычность.</b> Шесть компаний подтверждены прямым указанием — либо на их собственной странице («Russischsprachiger Pflegedienst»), либо в карточке каталога RusOrg.de. Blagovita вынесена отдельно: подтверждения нет. Ранее в списке были Paramedix и его площадки в Хемнице — они удалены, это крупная немецкая группа без указания на русский язык.</p>
+
+    <p><b>Данные</b> собраны из поисковой выдачи и справочников Das Örtliche, Gelbe Seiten, Hilfelotse Berlin. Телефоны и адреса могли измениться — сверяйте на сайте перед звонком.</p>
     <p><b>Статусы</b> хранятся только в этом браузере и никуда не отправляются. Другое устройство их не увидит.</p>
-    <p>Список неполный: это те, кого удалось подтвердить по имени и адресу. Русскоязычных Pflegedienst’ов в одном Берлине заметно больше — каталоги rusorg.de и berlin24.ru дадут продолжение, когда эти десять закончатся.</p>
+    <p>Список неполный: это те, кого удалось подтвердить по имени и адресу. Русскоязычных Pflegedienst’ов в одном Берлине заметно больше — каталоги rusorg.de и berlin24.ru дадут продолжение, когда эти закончатся.</p>
   </footer>
 
 </div>
