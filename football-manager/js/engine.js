@@ -1,14 +1,19 @@
-// Игровой движок: без DOM, работает и в браузере, и в Node (для тестов).
+// Игровой движок: ядро, матч, турнирная таблица, сезон. Без DOM — работает и в браузере, и в Node.
+// Игроки (атрибуты, развитие, настроение) — js/people.js, рынок и переговоры — js/market.js.
 (function (root) {
   'use strict';
 
-  const SAVE_VERSION = 1;
+  const SAVE_VERSION = 2;
 
   // ---------- утилиты ----------
   const rnd = () => Math.random();
   const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  const rf = (a, b) => a + rnd() * (b - a);
   const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const r1 = (v) => Math.round(v * 10) / 10;
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const r3 = (v) => Math.round(v * 1000) / 1000;
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
@@ -22,10 +27,14 @@
     for (let i = 0; i < items.length; i++) { r -= w[i]; if (r <= 0) return items[i]; }
     return items[items.length - 1];
   }
+  const util = { rnd, ri, rf, pick, clamp, shuffle, weighted, r1, r2, r3 };
+  const P = () => root.FMPeople;
+  const M = () => root.FMMarket;
 
   // ---------- справочники ----------
   const POS = ['GK', 'DF', 'MF', 'FW'];
   const POS_RU = { GK: 'ВР', DF: 'ЗЩ', MF: 'ПЗ', FW: 'НП' };
+  const POS_RU_FULL = { GK: 'Вратарь', DF: 'Защитник', MF: 'Полузащитник', FW: 'Нападающий' };
   const FORMATIONS = {
     '4-4-2': { DF: 4, MF: 4, FW: 2 },
     '4-3-3': { DF: 4, MF: 3, FW: 3 },
@@ -39,13 +48,13 @@
     balanced: { label: 'Сбалансированная', att: 1.0, def: 1.0 },
     attacking: { label: 'Атакующая', att: 1.12, def: 0.91 },
   };
-  // Трансферные окна: до какого тура (индекс 0..) можно покупать
+  // Трансферные окна: индексы туров (0 = перед 1-м туром)
   const WINDOWS = [[0, 3], [19, 21]];
 
-  const YOUTH_FIRST = ['Jack', 'Harry', 'Leo', 'Oliver', 'Charlie', 'Alfie', 'Jayden', 'Kai', 'Mason', 'Tom', 'Ethan', 'Noah', 'Rhys', 'Callum', 'Luca', 'Mateo', 'Samuel', 'Kian', 'Tyler', 'Reece', 'Oscar', 'Finley', 'Dylan', 'Archie', 'Max'];
-  const YOUTH_LAST = ['Smith', 'Walsh', 'Hughes', 'Clarke', 'Bennett', 'Okoye', 'Mensah', 'Doyle', 'Carter', 'Reid', 'Foster', 'Murray', 'Silva', 'Adeyemi', 'Parker', 'Morgan', 'Price', 'Grant', 'Lloyd', 'Kelly', 'Barnes', 'Osei', 'Nkemelu', 'Palmer', 'Ward'];
+  const YOUTH_FIRST = ['Jack', 'Harry', 'Leo', 'Oliver', 'Charlie', 'Alfie', 'Jayden', 'Kai', 'Mason', 'Tom', 'Ethan', 'Noah', 'Rhys', 'Callum', 'Luca', 'Mateo', 'Samuel', 'Kian', 'Tyler', 'Reece', 'Oscar', 'Finley', 'Dylan', 'Archie', 'Max', 'Rio', 'Tobi', 'Ezra', 'Dante', 'Ibrahim'];
+  const YOUTH_LAST = ['Smith', 'Walsh', 'Hughes', 'Clarke', 'Bennett', 'Okoye', 'Mensah', 'Doyle', 'Carter', 'Reid', 'Foster', 'Murray', 'Silva', 'Adeyemi', 'Parker', 'Morgan', 'Price', 'Grant', 'Lloyd', 'Kelly', 'Barnes', 'Osei', 'Nkemelu', 'Palmer', 'Ward', 'Bamford', 'Achterberg', 'Hollis', 'Nwosu', 'Quinn'];
 
-  // ---------- игроки ----------
+  // ---------- деньги ----------
   function ageFactor(age) {
     if (age <= 20) return 1.45;
     if (age <= 23) return 1.25;
@@ -55,34 +64,41 @@
     if (age <= 33) return 0.35;
     return 0.2;
   }
-  // Стоимость в млн €
-  function playerValue(p) {
-    const v = 0.3 * Math.pow(1.22, p.ovr - 60) * ageFactor(p.age);
-    return Math.max(0.1, Math.round(v * 10) / 10);
+  // Стоимость в млн €: молодые стоят дороже за счёт потенциала, короткий контракт снижает цену
+  function playerValue(p, state) {
+    const eff = p.age <= 23 && p.pot ? p.ovr + (p.pot - p.ovr) * 0.4 : p.ovr;
+    let v = 0.3 * Math.pow(1.22, eff - 60) * ageFactor(p.age);
+    if (state && p.contract && p.clubId) {
+      const left = p.contract.until - state.season;
+      if (left <= 0) v *= 0.55; else if (left === 1) v *= 0.8;
+    }
+    return Math.max(0.1, r1(v));
   }
-  // Зарплата в млн € в неделю
-  function wageFor(p) {
-    const w = 0.003 + 0.0022 * Math.pow(1.2, p.ovr - 60);
-    return Math.round(w * 1000) / 1000;
-  }
+  // Справедливая зарплата в млн € в неделю
+  function wageFor(p) { return r3(0.003 + 0.0022 * Math.pow(1.2, p.ovr - 60)); }
 
-  function makePlayer(state, clubId, name, pos, age, ovr, youth) {
+  // ---------- игроки ----------
+  function makePlayer(state, clubId, name, pos, age, ovr, opts) {
     const id = 'p' + (state.nextId++);
     const p = {
       id, name, pos, age, ovr, clubId,
-      fitness: 100, injury: 0, suspended: 0, youth: !!youth,
+      fitness: 100, injury: 0, suspended: 0, youth: !!(opts && opts.youth),
       stats: { apps: 0, goals: 0, assists: 0, yellow: 0, red: 0 },
       career: { apps: 0, goals: 0 },
+      history: [],
     };
-    p.wage = wageFor(p);
     state.players[id] = p;
+    P().initPlayer(state, p, opts || {});
     return p;
   }
 
-  function makeYouth(state, clubId, pos) {
+  function makeYouth(state, clubId, pos, opts) {
     const club = state.clubs[clubId];
-    const base = 50 + Math.round((club.rep - 60) * 0.35);
-    return makePlayer(state, clubId, pick(YOUTH_FIRST) + ' ' + pick(YOUTH_LAST), pos || pick(['DF', 'MF', 'MF', 'FW', 'DF']), ri(17, 19), clamp(base + ri(-4, 6), 48, 72), true);
+    const base = 50 + Math.round((club ? club.rep - 60 : 10) * 0.35);
+    const golden = (opts && opts.golden) || rnd() < 0.06;
+    const p = makePlayer(state, clubId, pick(YOUTH_FIRST) + ' ' + pick(YOUTH_LAST), pos || pick(['DF', 'MF', 'MF', 'FW', 'DF']),
+      ri(16, 18), clamp(base + ri(-4, 6) + (golden ? 4 : 0), 46, 72), { youth: true, golden });
+    return p;
   }
 
   // ---------- создание игры ----------
@@ -91,14 +107,15 @@
     if (!league) throw new Error('Нет лиги ' + leagueId);
     const state = {
       version: SAVE_VERSION,
-      leagueId, leagueName: league.name + ' (' + league.country + ')',
+      leagueId, leagueName: league.name, country: league.country,
       manager: managerName || 'Тренер',
       userClub: clubId,
       season: league.season,
       round: 0,
-      nextId: 1,
+      nextId: 1, nextMsg: 1,
       clubs: {}, players: {},
-      fixtures: [], news: [], history: [],
+      fixtures: [], news: [], inbox: [], history: [],
+      neg: null, report: null,
       gameOver: false,
     };
     for (const c of league.clubs) {
@@ -111,21 +128,24 @@
       for (const line of lines) {
         const [name, pos, age, ovr] = line.split('|');
         if (!POS.includes(pos)) throw new Error('Неверная позиция у ' + name);
-        makePlayer(state, c.id, name, pos, +age, +ovr, false);
+        makePlayer(state, c.id, name, pos, +age, +ovr, {});
       }
     }
     for (const cid of Object.keys(state.clubs)) {
       fillSquad(state, cid);
       const club = state.clubs[cid];
-      // Спонсорские/ТВ поступления в неделю: покрывают фонд зарплат с небольшим запасом
-      club.sponsor = Math.round((wageBill(state, cid) * 0.85 + club.rep * 0.004) * 100) / 100;
+      // ТВ и спонсоры в неделю: чуть меньше фонда зарплат, остальное — билеты и призовые
+      club.sponsor = r2(wageBill(state, cid) * 0.85 + club.rep * 0.004);
+      P().assignRoles(state, cid);
     }
+    for (const p of Object.values(state.players)) p.ovrStart = p.ovr;
     const user = state.clubs[clubId];
     user.formation = '4-3-3';
     user.lineup = autoLineup(state, clubId, user.formation);
     state.fixtures = makeFixtures(Object.keys(state.clubs));
     state.expectation = expectedPosition(state, clubId);
-    addNews(state, `${state.manager} назначен главным тренером клуба «${user.name}». Цель от руководства: место не ниже ${state.expectation}-го.`);
+    addNews(state, `${state.manager} назначен главным тренером клуба «${user.name}». Цель от руководства: место не ниже ${state.expectation}-го.`, 'club');
+    addMail(state, { type: 'info', title: 'Добро пожаловать в клуб', text: `Совет директоров «${user.name}» ждёт место не ниже ${state.expectation}-го. Трансферный бюджет: ${user.cash} млн €. Летнее окно открыто до 4-го тура. Проверьте контракты игроков: у некоторых они истекают уже этим летом.` });
     return state;
   }
 
@@ -133,9 +153,7 @@
     const squad = clubPlayers(state, clubId);
     const count = (pos) => squad.filter((p) => p.pos === pos).length;
     const need = { GK: 2, DF: 7, MF: 7, FW: 4 };
-    for (const pos of POS) {
-      for (let i = count(pos); i < need[pos]; i++) squad.push(makeYouth(state, clubId, pos));
-    }
+    for (const pos of POS) for (let i = count(pos); i < need[pos]; i++) squad.push(makeYouth(state, clubId, pos));
     while (squad.length < 22) squad.push(makeYouth(state, clubId));
   }
 
@@ -167,11 +185,12 @@
 
   // ---------- выборки ----------
   function clubPlayers(state, clubId) {
-    return Object.values(state.players).filter((p) => p.clubId === clubId);
+    const out = [];
+    for (const id in state.players) { const p = state.players[id]; if (p.clubId === clubId) out.push(p); }
+    return out;
   }
-  function wageBill(state, clubId) {
-    return clubPlayers(state, clubId).reduce((s, p) => s + p.wage, 0);
-  }
+  function freeAgents(state) { return clubPlayers(state, null); }
+  function wageBill(state, clubId) { return clubPlayers(state, clubId).reduce((s, p) => s + p.contract.wage, 0); }
   const available = (p) => p && p.injury <= 0 && p.suspended <= 0;
   function slotsOf(formation) {
     const f = FORMATIONS[formation];
@@ -185,7 +204,7 @@
       else if (Math.abs(POS.indexOf(p.pos) - POS.indexOf(slotPos)) === 1) r *= 0.87;
       else r *= 0.75;
     }
-    return r * (0.86 + 0.14 * p.fitness / 100);
+    return r * (0.86 + 0.14 * p.fitness / 100) * P().moraleMult(p);
   }
 
   function autoLineup(state, clubId, formation) {
@@ -193,8 +212,8 @@
     const pool = clubPlayers(state, clubId).filter(available);
     const used = new Set();
     const lineup = Array(slots.length).fill(null);
-    // сначала игроки на своих позициях, начиная с вратаря и нападающих
-    const order = slots.map((s, i) => i).sort((a, b) => ['GK', 'FW', 'DF', 'MF'].indexOf(slots[a]) - ['GK', 'FW', 'DF', 'MF'].indexOf(slots[b]));
+    const pri = ['GK', 'FW', 'DF', 'MF'];
+    const order = slots.map((s, i) => i).sort((a, b) => pri.indexOf(slots[a]) - pri.indexOf(slots[b]));
     for (const i of order) {
       const cands = pool.filter((p) => !used.has(p.id) && p.pos === slots[i]);
       cands.sort((a, b) => effRating(b, slots[i]) - effRating(a, slots[i]));
@@ -244,7 +263,6 @@
       if (pid) sum[slots[i]] += effRating(state.players[pid], slots[i]);
     });
     const avg = (k) => (cnt[k] ? sum[k] / cnt[k] : 0);
-    // удалённый игрок (null) тянет среднее линии вниз
     const f = FORMATIONS[side.formation];
     const attMod = 1 + 0.03 * (f.FW - 2) + 0.01 * (f.MF - 4) - 0.01 * (f.DF - 4);
     const defMod = 1 + 0.03 * (f.DF - 4) + 0.01 * (f.MF - 4) - 0.015 * (f.FW - 2);
@@ -283,9 +301,7 @@
     if (!silent) logEvent(match, 'sub', sideKey, `Замена: ${pin.name} выходит вместо ${state.players[outId].name}.`);
     return true;
   }
-  function benchFor(state, side) {
-    return clubPlayers(state, side.id).filter((p) => available(p) && !side.played.has(p.id));
-  }
+  function benchFor(state, side) { return clubPlayers(state, side.id).filter((p) => available(p) && !side.played.has(p.id)); }
   function aiSubs(state, match, sideKey) {
     const side = match[sideKey];
     if (side.subs >= MAX_SUBS || ![58, 68, 77, 84].includes(match.minute)) return;
@@ -301,42 +317,42 @@
     if (cands[0] && effRating(cands[0], slots[worst]) > worstScore + 1) makeSub(state, match, sideKey, side.xi[worst], cands[0].id);
   }
 
-  function logEvent(match, type, side, text) {
-    match.events.push({ minute: match.minute, type, side, text });
-  }
+  function logEvent(match, type, side, text) { match.events.push({ minute: match.minute, type, side, text }); }
 
   const T = {
-    chance: ['{p} пробивает — мимо ворот.', '{p} бьёт головой, но выше перекладины.', 'Удар {p} блокируют защитники.', '{p} не попадает по мячу в выгодной позиции.'],
-    save: ['{p} бьёт в створ — {gk} спасает!', 'Отличный сейв {gk} после удара {p}.', '{gk} забирает мяч после удара {p}.'],
+    chance: ['{p} пробивает — мимо ворот.', '{p} бьёт головой, но выше перекладины.', 'Удар {p} блокируют защитники.', '{p} не попадает по мячу в выгодной позиции.', '{p} пытается обвести вратаря, но теряет мяч.'],
+    save: ['{p} бьёт в створ — {gk} спасает!', 'Отличный сейв {gk} после удара {p}.', '{gk} забирает мяч после удара {p}.', '{gk} в прыжке переводит удар {p} на угловой.'],
     post: ['{p} попадает в штангу!', 'Перекладина! {p} был так близко.'],
-    goal: ['ГОЛ! {p} отправляет мяч в сетку!', 'ГОЛ! {p} не оставляет шансов вратарю!', 'ГОЛ! Удар {p} в девятку!', 'ГОЛ! {p} добивает мяч после отскока!'],
+    goal: ['ГОЛ! {p} отправляет мяч в сетку!', 'ГОЛ! {p} не оставляет шансов вратарю!', 'ГОЛ! Удар {p} в девятку!', 'ГОЛ! {p} добивает мяч после отскока!', 'ГОЛ! {p} замыкает прострел!'],
   };
   const tpl = (arr, vars) => pick(arr).replace(/\{(\w+)\}/g, (_, k) => vars[k] || '');
 
-  function pickPlayer(state, side, weights, exclude) {
+  function pickPlayer(state, side, weights, attr, exclude) {
     const slots = slotsOf(side.formation);
     const items = side.xi.map((pid, i) => ({ pid, slot: slots[i] })).filter((x) => x.pid && x.pid !== exclude);
     if (!items.length) return null;
-    const it = weighted(items, (x) => (weights[x.slot] || 0) * Math.pow(state.players[x.pid].ovr / 80, 3));
+    const it = weighted(items, (x) => {
+      const p = state.players[x.pid];
+      const v = attr && p.attrs ? p.attrs[attr] : p.ovr;
+      return (weights[x.slot] || 0) * Math.pow(v / 80, 3);
+    });
     return state.players[it.pid];
   }
   function goalkeeper(state, side) {
-    const slots = slotsOf(side.formation);
-    const i = slots.indexOf('GK');
+    const i = slotsOf(side.formation).indexOf('GK');
     return state.players[side.xi[i]] || { name: 'вратарь' };
   }
 
-  // Один игровой отрезок (минута)
+  // Одна минута матча
   function stepMatch(state, match) {
     if (match.done) return;
     match.minute++;
-    const sides = [['home', 'away'], ['away', 'home']];
     const pw = { home: teamPower(state, match.home), away: teamPower(state, match.away) };
     const midTot = pw.home.mid + pw.away.mid || 1;
     match.home.possession += pw.home.mid / midTot;
     match.away.possession += pw.away.mid / midTot;
 
-    for (const [ak, dk] of sides) {
+    for (const [ak, dk] of [['home', 'away'], ['away', 'home']]) {
       const A = match[ak], D = match[dk];
       const homeBoost = ak === 'home' ? 1.12 : 0.92;
       const ratio = pw[ak].att / Math.max(1, pw[dk].def);
@@ -344,13 +360,13 @@
       const xg = clamp(1.0 * homeBoost * control * Math.pow(ratio, 5), 0.12, 4.5);
       if (rnd() < (xg * 3) / 90) {
         A.shots++;
-        const shooter = pickPlayer(state, A, { FW: 6, MF: 3, DF: 1 });
+        const shooter = pickPlayer(state, A, { FW: 6, MF: 3, DF: 1 }, 'sho');
         if (!shooter) continue;
         const gk = goalkeeper(state, D);
         const r = rnd();
         if (r < 1 / 3) {
           A.onTarget++; A.goals++;
-          const assist = rnd() < 0.75 ? pickPlayer(state, A, { MF: 5, FW: 3, DF: 2 }, shooter.id) : null;
+          const assist = rnd() < 0.75 ? pickPlayer(state, A, { MF: 5, FW: 3, DF: 2 }, 'pas', shooter.id) : null;
           A.scorers.push({ minute: match.minute, pid: shooter.id, assist: assist && assist.id });
           shooter.stats.goals++; shooter.career.goals++;
           if (assist) assist.stats.assists++;
@@ -358,19 +374,16 @@
         } else if (r < 0.62) {
           A.onTarget++;
           logEvent(match, 'save', ak, tpl(T.save, { p: shooter.name, gk: gk.name }));
-        } else if (r < 0.68) {
-          logEvent(match, 'post', ak, tpl(T.post, { p: shooter.name }));
-        } else {
-          logEvent(match, 'chance', ak, tpl(T.chance, { p: shooter.name }));
-        }
+        } else if (r < 0.68) logEvent(match, 'post', ak, tpl(T.post, { p: shooter.name }));
+        else logEvent(match, 'chance', ak, tpl(T.chance, { p: shooter.name }));
       }
       // карточки
-      if (rnd() < 0.018) {
+      if (rnd() < 0.016) {
         const p = pickPlayer(state, A, { DF: 4, MF: 4, FW: 2, GK: 0.3 });
         if (p) {
           A.yellows[p.id] = (A.yellows[p.id] || 0) + 1;
           p.stats.yellow++;
-          if (A.yellows[p.id] >= 2) { sendOff(state, match, ak, p, 'вторая жёлтая — удаление!'); }
+          if (A.yellows[p.id] >= 2) sendOff(state, match, ak, p, 'вторая жёлтая — удаление!');
           else {
             logEvent(match, 'yellow', ak, `Жёлтая карточка: ${p.name}.`);
             if (p.stats.yellow % 5 === 0) { p.pendingBan = (p.pendingBan || 0) + 1; logEvent(match, 'info', ak, `${p.name} пропустит следующий матч из-за перебора жёлтых.`); }
@@ -389,12 +402,12 @@
           logEvent(match, 'injury', ak, `${p.name} травмирован и не может продолжать (≈${p.injury} нед.).`);
           const slots = slotsOf(A.formation);
           const idx = A.xi.indexOf(p.id);
-          const repl = benchFor(state, A).filter((x) => x.pos === slots[idx]).sort((a, b) => b.ovr - a.ovr)[0] || benchFor(state, A).sort((a, b) => b.ovr - a.ovr)[0];
+          const bench = benchFor(state, A);
+          const repl = bench.filter((x) => x.pos === slots[idx]).sort((a, b) => b.ovr - a.ovr)[0] || bench.sort((a, b) => b.ovr - a.ovr)[0];
           if (!(repl && makeSub(state, match, ak, p.id, repl.id))) A.xi[idx] = null;
         }
       }
     }
-    // усталость
     for (const k of ['home', 'away']) {
       for (const pid of match[k].xi) if (pid) { const p = state.players[pid]; p.fitness = Math.max(45, p.fitness - 0.14); }
       if (match[k].id !== state.userClub || match.autoUser) aiSubs(state, match, k);
@@ -415,12 +428,8 @@
     logEvent(match, 'red', sideKey, `${p.name}: ${why}`);
   }
 
-  function simulateMatch(state, match) {
-    while (!match.done) stepMatch(state, match);
-    return match;
-  }
+  function simulateMatch(state, match) { while (!match.done) stepMatch(state, match); return match; }
 
-  // Записать результат матча в состояние
   function applyMatch(state, match) {
     const f = match.fixture;
     f.hg = match.home.goals; f.ag = match.away.goals;
@@ -440,67 +449,96 @@
     return r ? r.find((m) => m.h === state.userClub || m.a === state.userClub) : null;
   }
 
-  // Сыграть все остальные матчи тура и выполнить недельные расчёты
   function finishRound(state, userMatch) {
     const round = currentRound(state);
-    const played = new Set();
-    if (userMatch) { applyMatch(state, userMatch); played.add(userMatch.fixture); }
+    const leaderBefore = state.round ? table(state)[0].id : null;
+    const matches = [];
+    if (userMatch) { applyMatch(state, userMatch); matches.push(userMatch); }
     for (const f of round) {
-      if (played.has(f)) continue;
+      if (userMatch && f === userMatch.fixture) continue;
       const m = createMatch(state, f);
       simulateMatch(state, m);
       applyMatch(state, m);
+      matches.push(m);
     }
-    weeklyUpdate(state, round, userMatch);
+    roundNews(state, round, matches, leaderBefore);
+    weeklyUpdate(state, round);
     state.round++;
-    if (state.round === WINDOWS[1][0]) addNews(state, 'Открылось зимнее трансферное окно.');
-    if (state.round === WINDOWS[0][1] + 1 || state.round === WINDOWS[1][1] + 1) addNews(state, 'Трансферное окно закрылось.');
-    const res = userMatch ? userMatch.fixture : null;
-    if (res) {
+    if (state.round === WINDOWS[1][0]) addNews(state, 'Открылось зимнее трансферное окно.', 'transfer');
+    if (state.round === WINDOWS[0][1] + 1 || state.round === WINDOWS[1][1] + 1) { addNews(state, 'Трансферное окно закрылось.', 'transfer'); M().windowClosed(state); }
+    if (userMatch) {
+      const res = userMatch.fixture;
       const home = res.h === state.userClub;
       const my = home ? res.hg : res.ag, their = home ? res.ag : res.hg;
       const word = my > their ? 'Победа' : my === their ? 'Ничья' : 'Поражение';
-      addNews(state, `${word}: «${state.clubs[res.h].name}» ${res.hg}:${res.ag} «${state.clubs[res.a].name}».`);
+      addNews(state, `${word}: «${state.clubs[res.h].name}» ${res.hg}:${res.ag} «${state.clubs[res.a].name}».`, 'result');
     }
-    // Проверка увольнения посреди сезона
+    // Увольнение посреди сезона
     if (state.round >= 15 && !state.gameOver) {
       const pos = positionOf(state, state.userClub);
       if (pos > state.expectation + 9 && pos >= Object.keys(state.clubs).length - 2) {
         state.warnings = (state.warnings || 0) + 1;
-        if (state.warnings === 1) addNews(state, 'Совет директоров недоволен положением команды. Нужны результаты!');
-        if (state.warnings >= 6) { state.gameOver = 'Совет директоров уволил вас из-за неудовлетворительных результатов.'; addNews(state, state.gameOver); }
+        if (state.warnings === 1) addMail(state, { type: 'board', title: 'Совет директоров недоволен', text: 'Положение команды в таблице вызывает тревогу. Нужны результаты в ближайших матчах.' });
+        if (state.warnings >= 6) { state.gameOver = 'Совет директоров уволил вас из-за неудовлетворительных результатов.'; addNews(state, state.gameOver, 'club'); }
       } else state.warnings = 0;
     }
-    return res;
   }
 
-  function weeklyUpdate(state, round, userMatch) {
+  // Новости тура: хет-трики, матч тура, смена лидера, отставки тренеров
+  function roundNews(state, round, matches, leaderBefore) {
+    const rn = state.round + 1;
+    for (const m of matches) {
+      for (const k of ['home', 'away']) {
+        const cnt = {};
+        for (const s of m[k].scorers) cnt[s.pid] = (cnt[s.pid] || 0) + 1;
+        for (const [pid, n] of Object.entries(cnt)) if (n >= 3) {
+          const p = state.players[pid];
+          addNews(state, `${n === 3 ? 'Хет-трик' : n + ' голов в одном матче'}! ${p.name} («${state.clubs[m[k].id].name}») отличился ${n} раза.`, 'star');
+        }
+      }
+    }
+    const big = matches.slice().sort((a, b) => Math.abs(b.home.goals - b.away.goals) - Math.abs(a.home.goals - a.away.goals) || (b.home.goals + b.away.goals) - (a.home.goals + a.away.goals))[0];
+    if (big && Math.abs(big.home.goals - big.away.goals) >= 3) {
+      addNews(state, `Разгром тура: «${state.clubs[big.home.id].name}» ${big.home.goals}:${big.away.goals} «${state.clubs[big.away.id].name}».`, 'result');
+    }
+    const t = table(state);
+    if (leaderBefore && t[0].id !== leaderBefore && rn >= 5) addNews(state, `Смена лидера! После ${rn}-го тура первое место у «${state.clubs[t[0].id].name}».`, 'result');
+    if (rn >= 12) {
+      state.sacked = state.sacked || {};
+      for (const r of t.slice(-3)) {
+        if (r.id === state.userClub || state.sacked[r.id] === state.season) continue;
+        if (rnd() < 0.05) { state.sacked[r.id] = state.season; addNews(state, `«${state.clubs[r.id].name}» отправил в отставку главного тренера после серии неудач.`, 'club'); }
+      }
+    }
+  }
+
+  function weeklyUpdate(state, round) {
     const playedIds = new Set();
-    for (const f of round) { playedIds.add(f.h); playedIds.add(f.a); }
+    const results = {};
+    for (const f of round) {
+      playedIds.add(f.h); playedIds.add(f.a);
+      results[f.h] = f.hg > f.ag ? 1 : f.hg < f.ag ? -1 : 0;
+      results[f.a] = -results[f.h];
+    }
     for (const p of Object.values(state.players)) {
       p.fitness = Math.min(100, p.fitness + 12);
       if (p.injury > 0) {
         p.injury--;
-        if (p.injury === 0 && p.clubId === state.userClub) addNews(state, `${p.name} восстановился после травмы.`);
+        if (p.injury === 0 && p.clubId === state.userClub) addNews(state, `${p.name} восстановился после травмы.`, 'squad');
       }
-      // дисквалифицированный игрок пропустил этот тур — срок уменьшается; новые наказания вступают в силу со следующего тура
+      // дисквалифицированный пропустил этот тур — срок уменьшается; новые наказания — со следующего тура
       if (p.suspended > 0 && playedIds.has(p.clubId)) p.suspended--;
       if (p.pendingBan) { p.suspended += p.pendingBan; p.pendingBan = 0; }
-      // небольшая еженедельная форма молодых
-      if (p.age <= 21 && rnd() < 0.03) p.ovr = Math.min(90, p.ovr + 1);
     }
+    P().weekly(state, results);
     for (const c of Object.values(state.clubs)) {
       const home = round.find((f) => f.h === c.id);
-      c.finance.income += c.sponsor + (home ? c.rep * 0.02 : 0);
+      const inc = c.sponsor + (home ? c.rep * 0.02 : 0);
       const w = wageBill(state, c.id);
-      c.finance.wages += w;
-      c.cash += c.sponsor + (home ? c.rep * 0.02 : 0) - w;
-      c.cash = Math.round(c.cash * 100) / 100;
+      c.finance.income += inc; c.finance.wages += w;
+      c.cash = r2(c.cash + inc - w);
     }
-    // травмы на тренировках у пользователя — редкость
-    for (const p of clubPlayers(state, state.userClub)) {
-      if (p.injury <= 0 && rnd() < 0.004) { p.injury = ri(1, 3); addNews(state, `${p.name} получил травму на тренировке (≈${p.injury} нед.).`); }
-    }
+    M().weekly(state);
   }
 
   // ---------- таблица ----------
@@ -518,65 +556,12 @@
     return Object.values(rows).sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf || state.clubs[a.id].name.localeCompare(state.clubs[b.id].name));
   }
   function positionOf(state, clubId) { return table(state).findIndex((r) => r.id === clubId) + 1; }
-
   function topScorers(state, n) {
-    return Object.values(state.players).filter((p) => p.stats.goals > 0)
+    return Object.values(state.players).filter((p) => p.stats.goals > 0 && p.clubId)
       .sort((a, b) => b.stats.goals - a.stats.goals || b.stats.assists - a.stats.assists).slice(0, n || 15);
   }
 
-  // ---------- трансферы ----------
   function windowOpen(state) { return WINDOWS.some(([a, b]) => state.round >= a && state.round <= b); }
-  function askingPrice(state, p) {
-    const squad = clubPlayers(state, p.clubId).sort((a, b) => b.ovr - a.ovr);
-    const star = squad.indexOf(p) < 3;
-    return Math.round(playerValue(p) * (star ? 1.6 : 1.3) * 10) / 10;
-  }
-  function canBuy(state, pid) {
-    const p = state.players[pid];
-    const me = state.clubs[state.userClub];
-    if (!p || p.clubId === state.userClub) return { ok: false, why: 'Игрок уже в вашем клубе.' };
-    if (!windowOpen(state)) return { ok: false, why: 'Трансферное окно закрыто.' };
-    const price = askingPrice(state, p);
-    if (clubPlayers(state, p.clubId).length <= 18) return { ok: false, why: 'Клуб не готов отпустить игрока: состав слишком мал.' };
-    if (p.ovr > me.rep + 6) return { ok: false, why: 'Игрок не хочет переходить в клуб вашего уровня.' };
-    if (me.cash < price) return { ok: false, why: `Не хватает денег: нужно ${price} млн €.` };
-    if (clubPlayers(state, state.userClub).length >= 32) return { ok: false, why: 'В вашем составе уже 32 игрока.' };
-    return { ok: true, price };
-  }
-  function buyPlayer(state, pid) {
-    const chk = canBuy(state, pid);
-    if (!chk.ok) return chk;
-    const p = state.players[pid];
-    const seller = state.clubs[p.clubId], me = state.clubs[state.userClub];
-    me.cash = Math.round((me.cash - chk.price) * 100) / 100; seller.cash += chk.price;
-    me.finance.transfersOut += chk.price; seller.finance.transfersIn += chk.price;
-    p.clubId = me.id; p.wage = Math.round(wageFor(p) * 1.1 * 1000) / 1000; p.youth = false;
-    addNews(state, `Трансфер: ${p.name} переходит из «${seller.name}» в «${me.name}» за ${chk.price} млн €.`);
-    if (seller.lineup) seller.lineup = null;
-    return { ok: true, price: chk.price };
-  }
-  function sellOffer(state, pid) {
-    const p = state.players[pid];
-    if (!p || p.clubId !== state.userClub) return { ok: false, why: 'Это не ваш игрок.' };
-    if (!windowOpen(state)) return { ok: false, why: 'Трансферное окно закрыто.' };
-    if (clubPlayers(state, state.userClub).length <= 16) return { ok: false, why: 'В составе должно остаться минимум 16 игроков.' };
-    const price = Math.round(playerValue(p) * (0.85 + rnd() * 0.3) * 10) / 10;
-    const buyers = Object.values(state.clubs).filter((c) => c.id !== state.userClub && c.cash >= price && c.rep + 8 >= p.ovr);
-    if (!buyers.length) return { ok: false, why: 'Нет клубов, готовых заплатить за игрока.' };
-    const buyer = buyers.sort((a, b) => b.rep - a.rep)[Math.floor(rnd() * Math.min(4, buyers.length))];
-    return { ok: true, price, buyer: buyer.id };
-  }
-  function sellPlayer(state, pid, offer) {
-    const p = state.players[pid];
-    const me = state.clubs[state.userClub], buyer = state.clubs[offer.buyer];
-    if (!p || p.clubId !== me.id || buyer.cash < offer.price) return { ok: false, why: 'Сделка сорвалась.' };
-    me.cash = Math.round((me.cash + offer.price) * 100) / 100; buyer.cash -= offer.price;
-    me.finance.transfersIn += offer.price;
-    p.clubId = buyer.id;
-    me.lineup = me.lineup.map((id) => (id === pid ? null : id));
-    addNews(state, `Трансфер: ${p.name} продан в «${buyer.name}» за ${offer.price} млн €.`);
-    return { ok: true };
-  }
 
   // ---------- конец сезона ----------
   function seasonOver(state) { return state.round >= state.fixtures.length; }
@@ -590,67 +575,74 @@
     t.forEach((r, i) => {
       const c = state.clubs[r.id];
       const prize = (n - i) * 2.2 + (i === 0 ? 25 : i < 4 ? 12 : 0);
-      c.cash = Math.round((c.cash + prize) * 100) / 100;
+      c.cash = r2(c.cash + prize);
       c.finance.income += prize;
       c.rep = clamp(c.rep + (i < 4 ? 1 : i >= n - 3 ? -1 : 0), 50, 99);
     });
-    const met = pos <= state.expectation;
-    const rec = {
-      season: `${state.season}/${String(state.season + 1).slice(2)}`, champion: champion.name, pos,
-      expectation: state.expectation, scorer: scorer ? `${scorer.name} (${scorer.stats.goals})` : '—',
-      pts: t[pos - 1].pts,
-    };
+    const label = `${state.season}/${String(state.season + 1).slice(2)}`;
+    // запись в историю игроков
+    for (const p of Object.values(state.players)) {
+      if (p.stats.apps > 0 && p.clubId) p.history.push({ season: label, club: state.clubs[p.clubId].name, apps: p.stats.apps, goals: p.stats.goals, assists: p.stats.assists, ovr: p.ovr });
+    }
+    const rec = { season: label, champion: champion.name, pos, expectation: state.expectation, scorer: scorer ? `${scorer.name} (${scorer.stats.goals})` : '—', pts: t[pos - 1].pts };
     state.history.push(rec);
     let verdict;
     if (pos > state.expectation + 6 || state.clubs[state.userClub].cash < -60) {
       verdict = 'Совет директоров принял решение о вашей отставке.';
       state.gameOver = verdict;
-    } else if (met) verdict = 'Руководство довольно: цель на сезон выполнена!';
+    } else if (pos <= state.expectation) verdict = 'Руководство довольно: цель на сезон выполнена!';
     else verdict = 'Цель не выполнена, но руководство даёт вам ещё один шанс.';
-    addNews(state, `Сезон ${rec.season} завершён. Чемпион — «${champion.name}». Ваше место: ${pos}. ${verdict}`);
+    addNews(state, `Сезон ${label} завершён. Чемпион — «${champion.name}». Ваше место: ${pos}. ${verdict}`, 'club');
+    // отчёт: кто вырос, кто сдал, у кого горит контракт; затем — истечение контрактов
+    state.report = P().seasonReport(state, label);
+    M().expireContracts(state);
     return { ...rec, verdict, gameOver: !!state.gameOver };
   }
 
   function startNewSeason(state) {
     state.season++;
     state.round = 0;
-    const retired = [];
-    for (const p of Object.values(state.players)) {
-      p.age++;
-      let d;
-      if (p.age <= 21) d = ri(0, 5);
-      else if (p.age <= 24) d = ri(-1, 3);
-      else if (p.age <= 29) d = ri(-1, 1);
-      else if (p.age <= 31) d = ri(-3, 0);
-      else d = ri(-5, -1);
-      p.ovr = clamp(p.ovr + d, 40, 94);
-      p.wage = Math.max(p.wage * 0.98, wageFor(p) * 0.9);
-      p.wage = Math.round(p.wage * 1000) / 1000;
-      p.stats = { apps: 0, goals: 0, assists: 0, yellow: 0, red: 0 };
-      p.fitness = 100; p.suspended = 0; p.pendingBan = 0; p.injury = Math.max(0, p.injury - 6);
-      if (p.age >= 35 && rnd() < 0.45 + (p.age - 35) * 0.15) retired.push(p);
-    }
+    const retired = P().seasonAging(state);
     for (const p of retired) {
-      if (p.clubId === state.userClub) addNews(state, `${p.name} (${p.age}) завершил карьеру.`);
+      if (p.clubId === state.userClub) addNews(state, `${p.name} (${p.age}) завершил карьеру.`, 'squad');
       delete state.players[p.id];
     }
+    const intake = [];
     for (const cid of Object.keys(state.clubs)) {
       const c = state.clubs[cid];
-      for (let i = 0; i < 2; i++) makeYouth(state, cid);
-      fillSquad(state, cid);
+      const k = cid === state.userClub ? ri(2, 4) : 2;
+      for (let i = 0; i < k; i++) { const y = makeYouth(state, cid); if (cid === state.userClub) intake.push(y); }
       c.finance = { income: 0, wages: 0, transfersIn: 0, transfersOut: 0 };
-      if (c.lineup) c.lineup = null;
+      c.lineup = null;
     }
+    for (const m of state.inbox) if (!m.resolved && (m.type === 'bid' || m.type === 'agent')) m.resolved = 'expired';
+    M().preseason(state);
+    for (const cid of Object.keys(state.clubs)) fillSquad(state, cid);
+    for (const cid of Object.keys(state.clubs)) P().assignRoles(state, cid);
+    for (const p of Object.values(state.players)) p.ovrStart = p.ovr;
     const user = state.clubs[state.userClub];
     user.lineup = autoLineup(state, user.id, user.formation);
     state.fixtures = makeFixtures(Object.keys(state.clubs));
     state.expectation = expectedPosition(state, state.userClub);
-    addNews(state, `Новый сезон ${state.season}/${String(state.season + 1).slice(2)}. В клуб пришли воспитанники академии. Цель: место не ниже ${state.expectation}-го.`);
+    const label = `${state.season}/${String(state.season + 1).slice(2)}`;
+    addNews(state, `Новый сезон ${label}. Цель от руководства: место не ниже ${state.expectation}-го.`, 'club');
+    if (intake.length) {
+      const best = intake.slice().sort((a, b) => b.pot - a.pot)[0];
+      addMail(state, { type: 'youth', title: 'Выпускники академии', pid: best.id,
+        text: `В основную команду переведены воспитанники: ${intake.map((y) => `${y.name} (${POS_RU[y.pos]}, ${y.age})`).join(', ')}. ${P().isWonderkid(best) ? `Тренеры академии в восторге от ${best.name}: это может быть будущая звезда.` : 'Посмотрите их карточки и решите, кому дать шанс.'}` });
+    }
   }
 
-  function addNews(state, text) {
-    state.news.unshift({ season: state.season, round: state.round, text });
-    if (state.news.length > 80) state.news.length = 80;
+  // ---------- новости и почта ----------
+  function addNews(state, text, kind) {
+    state.news.unshift({ season: state.season, round: state.round, text, kind: kind || 'info' });
+    if (state.news.length > 120) state.news.length = 120;
+  }
+  function addMail(state, msg) {
+    const m = { id: 'm' + (state.nextMsg++), season: state.season, round: state.round, read: false, resolved: false, ...msg };
+    state.inbox.unshift(m);
+    if (state.inbox.length > 80) state.inbox.length = 80;
+    return m;
   }
 
   // ---------- сохранение ----------
@@ -662,12 +654,11 @@
   }
 
   root.FMEngine = {
-    POS, POS_RU, FORMATIONS, MENTALITY, MAX_SUBS,
-    newGame, autoLineup, validateLineup, slotsOf, effRating, available,
-    clubPlayers, wageBill, playerValue, askingPrice,
+    SAVE_VERSION, POS, POS_RU, POS_RU_FULL, FORMATIONS, MENTALITY, MAX_SUBS, WINDOWS, util,
+    newGame, autoLineup, validateLineup, slotsOf, effRating, available, makePlayer, makeYouth,
+    clubPlayers, freeAgents, wageBill, playerValue, wageFor,
     createMatch, stepMatch, simulateMatch, makeSub, benchFor, teamPower,
-    currentRound, userFixture, finishRound, table, positionOf, topScorers,
-    windowOpen, canBuy, buyPlayer, sellOffer, sellPlayer,
-    seasonOver, endSeason, startNewSeason, serialize, deserialize, addNews,
+    currentRound, userFixture, finishRound, table, positionOf, topScorers, windowOpen,
+    seasonOver, endSeason, startNewSeason, serialize, deserialize, addNews, addMail,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
